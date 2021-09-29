@@ -78,6 +78,8 @@ namespace fas_c4_model
             Container sessionContext = tutoringSystem.AddContainer("Session Bounded Context", "Bounded Context para gestión de sesiones", "Spring Boot port 8081");
             Container userContext = tutoringSystem.AddContainer("User Bounded Context", "Bounded Context para gestión de usuarios", "Spring Boot port 8081");
             Container subscriptionContext = tutoringSystem.AddContainer("Subscription Bounded Context", "Bounded Context para gestión de suscripciones", "Spring Boot port 8081");
+            Container externalToolsContext = tutoringSystem.AddContainer("External Tools Bounded Context", "Bounded Context para gestión de herramientas externas", "Spring Boot port 8081");
+
 
             Container businessContextDatabase = tutoringSystem.AddContainer("Business Context DB", "", "MySQL");
 
@@ -97,16 +99,18 @@ namespace fas_c4_model
             apiGateway.Uses(sessionContext, "API Request", "JSON/HTTPS");
             apiGateway.Uses(userContext, "API Request", "JSON/HTTPS");
             apiGateway.Uses(subscriptionContext, "API Request", "JSON/HTTPS");
+            apiGateway.Uses(externalToolsContext, "API Request", "JSON/HTTPS");
 
             sessionContext.Uses(businessContextDatabase, "", "JDBC");
-            sessionContext.Uses(googleCalendar, "Reserva de evento", "JSON");
-            sessionContext.Uses(zoom, "Programa reunión", "JSON");
 
             userContext.Uses(businessContextDatabase, "", "JDBC");
 
             subscriptionContext.Uses(businessContextDatabase, "", "JDBC");
 
-            zoom.Uses(userContext, "Retorna link de la reunión", "JSON");
+            externalToolsContext.Uses(googleCalendar, "Reserva de evento", "JSON");
+            externalToolsContext.Uses(zoom, "Programa reunión", "JSON");
+
+            zoom.Uses(externalToolsContext, "Retorna link de la reunión", "JSON");
 
             // Tags
             mobileApplication.AddTags("MobileApp");
@@ -117,6 +121,7 @@ namespace fas_c4_model
             sessionContext.AddTags("BoundedContext");
             userContext.AddTags("BoundedContext");
             subscriptionContext.AddTags("BoundedContext");
+            externalToolsContext.AddTags("BoundedContext");
 
             businessContextDatabase.AddTags("DataBase");
 
@@ -151,11 +156,6 @@ namespace fas_c4_model
             Component scheduleRepository = sessionContext.AddComponent("Schedule Repository", "Provee los métodos para la persistencia de datos de Schedule", "Spring Component");
             Component sessionDetailRepository = sessionContext.AddComponent("Session Details Repository", "Provee los métodos para la persistencia de datos de Session Detail", "Spring Component");
             Component sessionRepository = sessionContext.AddComponent("Session Repository", "Provee los métodos para la persistencia de datos de Session", "Spring Component");
-
-            Component googleCalendarController = sessionContext.AddComponent("Google Calendar Controller", "REST API ", "Spring Boot REST Controller");
-            Component googleCalendarFacade = sessionContext.AddComponent("Google Calendar Facade", "", "Spring Component");
-            Component zoomController = sessionContext.AddComponent("Zoom Controller", "REST API ", "Spring Boot REST Controller");
-            Component zoomFacade = sessionContext.AddComponent("Zoom Facade", "", "Spring Component");
 
 
             // Components Diagram - User Bounded Context
@@ -192,7 +192,11 @@ namespace fas_c4_model
 
             Component subscriptionRepository = subscriptionContext.AddComponent("Subscription Repository", "Provee los métodos para la persistencia de datos de Subscription", "Spring Component");
 
-
+            // Components Diagram - External Tools Bounded Context
+            Component googleCalendarController = externalToolsContext.AddComponent("Google Calendar Controller", "REST API ", "Spring Boot REST Controller");
+            Component googleCalendarFacade = externalToolsContext.AddComponent("Google Calendar Facade", "", "Spring Component");
+            Component zoomController = externalToolsContext.AddComponent("Zoom Controller", "REST API ", "Spring Boot REST Controller");
+            Component zoomFacade = externalToolsContext.AddComponent("Zoom Facade", "", "Spring Component");
 
             // Tags
             languageOfInterestController.AddTags("Controller");
@@ -363,8 +367,6 @@ namespace fas_c4_model
             zoomController.Uses(zoomFacade, "Llama a los métodos del Service");
             zoomFacade.Uses(zoom, "Usa");
 
-
-
             // View - Components Diagram - Session Bounded Context
             ComponentView sessionComponentView = viewSet.CreateComponentView(sessionContext, "Session Bounded Context's Components", "Component Diagram");
             sessionComponentView.PaperSize = PaperSize.A3_Landscape;
@@ -372,8 +374,6 @@ namespace fas_c4_model
             sessionComponentView.Add(webApplication);
             sessionComponentView.Add(apiGateway);
             sessionComponentView.Add(businessContextDatabase);
-            sessionComponentView.Add(googleCalendar);
-            sessionComponentView.Add(zoom);
             sessionComponentView.AddAllComponents();
 
             // View - Components Diagram - User Bounded Context
@@ -394,7 +394,14 @@ namespace fas_c4_model
             subscriptionComponentView.Add(businessContextDatabase);
             subscriptionComponentView.AddAllComponents();
 
-
+            // View - Components Diagram - External Bounded Context
+            ComponentView externalToolsComponentView = viewSet.CreateComponentView(externalToolsContext, "External Tools Bounded Context's Components", "Component Diagram");
+            externalToolsComponentView.Add(mobileApplication);
+            externalToolsComponentView.Add(webApplication);
+            externalToolsComponentView.Add(apiGateway);
+            externalToolsComponentView.Add(googleCalendar);
+            externalToolsComponentView.Add(zoom);
+            externalToolsComponentView.AddAllComponents();
 
             structurizrClient.UnlockWorkspace(workspaceId);
             structurizrClient.PutWorkspace(workspaceId, workspace);
