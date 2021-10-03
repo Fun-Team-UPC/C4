@@ -22,6 +22,7 @@ namespace fas_c4_model
 
             SoftwareSystem tutoringSystem = model.AddSoftwareSystem(Location.Internal, "Tutorias para aprender/perfeccionar algún idioma", "Permite la reserva de sesiones entre estudiante y tutor");
             SoftwareSystem zoom = model.AddSoftwareSystem("Zoom", "Plataforma que ofrece una REST API de videollamadas.");
+            SoftwareSystem paypal = model.AddSoftwareSystem("Paypal", "Plataforma que el servicio de medios de pago");
             SoftwareSystem googleCalendar = model.AddSoftwareSystem("Google Calendar", "Permite transmitir información en tiempo real por el avión del vuelo a nuestro sistema");
 
             Person student = model.AddPerson("Estudiante", "Persona que busca aprender/mejorar algún idioma.");
@@ -35,6 +36,7 @@ namespace fas_c4_model
 
             tutoringSystem.Uses(googleCalendar, "Envía información para la reserva de un evento");
             tutoringSystem.Uses(zoom, "Se comunica para la programación de una reunión");
+            tutoringSystem.Uses(paypal, "Se comunica para la realizacion de pagos en transacciones");
 
             ViewSet viewSet = workspace.Views;
 
@@ -52,6 +54,7 @@ namespace fas_c4_model
             tutoringSystem.AddTags("SistemaMonitoreo");
             zoom.AddTags("Zoom");
             googleCalendar.AddTags("AircraftSystem");
+            paypal.AddTags("Paypal");
             student.AddTags("Estudiante");
             tutor.AddTags("Tutor");
             admin.AddTags("Admin");
@@ -62,6 +65,7 @@ namespace fas_c4_model
             styles.Add(new ElementStyle("Admin") { Background = "#facc2e", Shape = Shape.Robot });
             styles.Add(new ElementStyle("SistemaMonitoreo") { Background = "#008f39", Color = "#ffffff", Shape = Shape.RoundedBox });
             styles.Add(new ElementStyle("Zoom") { Background = "#90714c", Color = "#ffffff", Shape = Shape.RoundedBox });
+            styles.Add(new ElementStyle("Paypal") { Background = "#828412", Color = "#ffffff", Shape = Shape.RoundedBox });
             styles.Add(new ElementStyle("AircraftSystem") { Background = "#2f95c7", Color = "#ffffff", Shape = Shape.RoundedBox });
 
 
@@ -79,6 +83,7 @@ namespace fas_c4_model
             Container userContext = tutoringSystem.AddContainer("User Bounded Context", "Bounded Context para gestión de usuarios", "Spring Boot port 8081");
             Container subscriptionContext = tutoringSystem.AddContainer("Subscription Bounded Context", "Bounded Context para gestión de suscripciones", "Spring Boot port 8081");
             Container externalToolsContext = tutoringSystem.AddContainer("External Tools Bounded Context", "Bounded Context para gestión de herramientas externas", "Spring Boot port 8081");
+            Container paymentContext = tutoringSystem.AddContainer("Payment Bounded Context", "Bounded Context para gestión de pagos", "Spring Boot port 8081");
 
 
             Container businessContextDatabase = tutoringSystem.AddContainer("Business Context DB", "", "MySQL");
@@ -100,12 +105,16 @@ namespace fas_c4_model
             apiGateway.Uses(userContext, "API Request", "JSON/HTTPS");
             apiGateway.Uses(subscriptionContext, "API Request", "JSON/HTTPS");
             apiGateway.Uses(externalToolsContext, "API Request", "JSON/HTTPS");
+            apiGateway.Uses(paymentContext, "API Request", "JSON/HTTPS");
 
             sessionContext.Uses(businessContextDatabase, "", "JDBC");
 
             userContext.Uses(businessContextDatabase, "", "JDBC");
 
             subscriptionContext.Uses(businessContextDatabase, "", "JDBC");
+
+            paymentContext.Uses(paypal, "", "JDBC");
+            paymentContext.Uses(businessContextDatabase, "", "JDBC");
 
             externalToolsContext.Uses(googleCalendar, "Reserva de evento", "JSON");
             externalToolsContext.Uses(zoom, "Programa reunión", "JSON");
@@ -122,6 +131,7 @@ namespace fas_c4_model
             userContext.AddTags("BoundedContext");
             subscriptionContext.AddTags("BoundedContext");
             externalToolsContext.AddTags("BoundedContext");
+            paymentContext.AddTags("BoundedContext");
 
             businessContextDatabase.AddTags("DataBase");
 
@@ -198,6 +208,11 @@ namespace fas_c4_model
             Component zoomController = externalToolsContext.AddComponent("Zoom Controller", "REST API ", "Spring Boot REST Controller");
             Component zoomFacade = externalToolsContext.AddComponent("Zoom Facade", "", "Spring Component");
 
+            // Components Diagram - External Tools Bounded Context
+            Component paypalController = paymentContext.AddComponent("Paypal Controller", "REST API ", "Spring Boot REST Controller");
+            Component paypalFacade = paymentContext.AddComponent("Paypal Facade", "", "Spring Component");
+            Component paypalRepository = paymentContext.AddComponent("Paypal Repository", "", "Spring Component");
+
             // Tags
             languageOfInterestController.AddTags("Controller");
             languageOfInterestService.AddTags("Service");
@@ -252,6 +267,9 @@ namespace fas_c4_model
             zoomController.AddTags("Controller");
             zoomFacade.AddTags("Service");
 
+            paypalController.AddTags("Controller");
+            paypalFacade.AddTags("Service");
+            paypalRepository.AddTags("Repository");
 
             styles.Add(new ElementStyle("Controller") { Shape = Shape.Component, Background = "#FDFF8B", Icon = "" });
             styles.Add(new ElementStyle("Service") { Shape = Shape.Component, Background = "#FEF535", Icon = "" });
@@ -367,6 +385,14 @@ namespace fas_c4_model
             zoomController.Uses(zoomFacade, "Llama a los métodos del Service");
             zoomFacade.Uses(zoom, "Usa");
 
+            //Component connection: Payment
+            apiGateway.Uses(paypalController, "", "JSON/HTTPS");
+            paypalController.Uses(paypal, "", "JSON/HTTPS");
+            paypalController.Uses(paypalFacade, "", "JSON/HTTPS");
+            paypalFacade.Uses(paypalRepository, "", "JSON/HTTPS");
+            paypalRepository.Uses(businessContextDatabase, "", "JSON/HTTPS");
+
+
             // View - Components Diagram - Session Bounded Context
             ComponentView sessionComponentView = viewSet.CreateComponentView(sessionContext, "Session Bounded Context's Components", "Component Diagram");
             sessionComponentView.PaperSize = PaperSize.A3_Landscape;
@@ -402,6 +428,18 @@ namespace fas_c4_model
             externalToolsComponentView.Add(googleCalendar);
             externalToolsComponentView.Add(zoom);
             externalToolsComponentView.AddAllComponents();
+
+            // View - Components Diagram - External Payment Context
+            ComponentView paymentComponentView = viewSet.CreateComponentView(paymentContext, "Payment Bounded Context's Components", "Component Diagram");
+            paymentComponentView.Add(mobileApplication);
+            paymentComponentView.Add(webApplication);
+            paymentComponentView.Add(apiGateway);
+            paymentComponentView.Add(paypalController);
+            paymentComponentView.Add(paypalFacade);
+            paymentComponentView.Add(paypalRepository);
+            paymentComponentView.Add(paypal);
+            paymentComponentView.Add(businessContextDatabase);
+            paymentComponentView.AddAllComponents();
 
             structurizrClient.UnlockWorkspace(workspaceId);
             structurizrClient.PutWorkspace(workspaceId, workspace);
