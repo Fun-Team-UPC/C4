@@ -1,5 +1,7 @@
 ﻿using Structurizr;
 using Structurizr.Api;
+using Structurizr.Core.Util;
+using System.Linq;
 
 namespace fas_c4_model
 {
@@ -440,6 +442,34 @@ namespace fas_c4_model
             paymentComponentView.Add(paypal);
             paymentComponentView.Add(businessContextDatabase);
             paymentComponentView.AddAllComponents();
+
+
+
+            DeploymentNode liveWebServer = model.AddDeploymentNode("bigbank-web***", "A web server residing in the web server farm, accessed via F5 BIG-IP LTMs.", "Ubuntu 16.04 LTS", 8, DictionaryUtils.Create("Location=London"));
+            liveWebServer.AddDeploymentNode("Apache Tomcat", "An open source Java EE web server.", "Apache Tomcat 8.x", 1, DictionaryUtils.Create("Xmx=512M", "Xms=1024M", "Java Version=8"))
+                .Add(webApplication);
+
+            DeploymentNode primaryDatabaseServer = model.AddDeploymentNode("bigbank-db01", "The primary database server.", "Ubuntu 16.04 LTS", 1, DictionaryUtils.Create("Location=London"))
+                .AddDeploymentNode("Oracle - Secondary", "A secondary, standby database server, used for failover purposes only.", "Oracle 12c");
+            primaryDatabaseServer.Add(businessContextDatabase);
+
+            DeploymentNode secondaryDatabaseServer = model.AddDeploymentNode("bigbank-db02", "The secondary database server.", "Ubuntu 16.04 LTS", 1, DictionaryUtils.Create("Location=Reading"))
+                .AddDeploymentNode("Oracle - Secondary", "A secondary, standby database server, used for failover purposes only.", "Oracle 12c");
+            ContainerInstance secondaryDatabase = secondaryDatabaseServer.Add(businessContextDatabase);
+
+
+            model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
+            Relationship dataReplicationRelationship = primaryDatabaseServer.Uses(secondaryDatabaseServer, "Replicates data to", "");
+            secondaryDatabase.AddTags("Failover");
+
+            model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
+            Relationship dataPersistanceRelationship = liveWebServer.Uses(primaryDatabaseServer, "Escribe desde y lee hasta", "JDBC");
+
+            DeploymentView liveDeploymentView = viewSet.CreateDeploymentView(tutoringSystem, "Deployment Diagram", "ILanguage Deployment Diagram");
+            liveDeploymentView.Add(liveWebServer);
+            liveDeploymentView.Add(primaryDatabaseServer);
+            liveDeploymentView.Add(secondaryDatabaseServer);
+            liveDeploymentView.Add(dataReplicationRelationship);
 
             structurizrClient.UnlockWorkspace(workspaceId);
             structurizrClient.PutWorkspace(workspaceId, workspace);
