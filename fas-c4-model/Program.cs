@@ -81,14 +81,17 @@ namespace fas_c4_model
 
             Container apiGateway = tutoringSystem.AddContainer("API Gateway", "API Gateway", "Spring Boot port 8080");
 
-            Container sessionContext = tutoringSystem.AddContainer("Session Bounded Context", "Bounded Context para gestión de sesiones", "Spring Boot port 8081");
+            Container sessionContext = tutoringSystem.AddContainer("Session Bounded Context", "Bounded Context para gestión de sesiones", "Spring Boot port 8085");
             Container userContext = tutoringSystem.AddContainer("User Bounded Context", "Bounded Context para gestión de usuarios", "Spring Boot port 8081");
-            Container subscriptionContext = tutoringSystem.AddContainer("Subscription Bounded Context", "Bounded Context para gestión de suscripciones", "Spring Boot port 8081");
-            Container externalToolsContext = tutoringSystem.AddContainer("External Tools Bounded Context", "Bounded Context para gestión de herramientas externas", "Spring Boot port 8081");
+            Container subscriptionContext = tutoringSystem.AddContainer("Subscription Bounded Context", "Bounded Context para gestión de suscripciones", "Spring Boot port 8089");
+            Container externalToolsContext = tutoringSystem.AddContainer("External Tools Bounded Context", "Bounded Context para gestión de herramientas externas", "Spring Boot port 8082");
             Container paymentContext = tutoringSystem.AddContainer("Payment Bounded Context", "Bounded Context para gestión de pagos", "Spring Boot port 8081");
 
-
-            Container businessContextDatabase = tutoringSystem.AddContainer("Business Context DB", "", "MySQL");
+            Container userContextDatabase = tutoringSystem.AddContainer("User Context DB", "", "MySQL");
+            Container sessionContextDatabase = tutoringSystem.AddContainer("Session Context DB", "", "MySQL");
+            Container subscriptionContextDatabase = tutoringSystem.AddContainer("Subscription Context DB", "", "MySQL");
+            Container paymentContextDatabase = tutoringSystem.AddContainer("Payment Context DB", "", "MySQL");
+            Container externalToolContextDatabase = tutoringSystem.AddContainer("External Tool Context DB", "", "MySQL");
 
 
             student.Uses(mobileApplication, "Consulta");
@@ -109,17 +112,18 @@ namespace fas_c4_model
             apiGateway.Uses(externalToolsContext, "API Request", "JSON/HTTPS");
             apiGateway.Uses(paymentContext, "API Request", "JSON/HTTPS");
 
-            sessionContext.Uses(businessContextDatabase, "", "JDBC");
+            sessionContext.Uses(sessionContextDatabase, "Lee desde y escribe hasta", "JDBC");
 
-            userContext.Uses(businessContextDatabase, "", "JDBC");
+            userContext.Uses(userContextDatabase, "Lee desde y escribe hasta", "JDBC");
 
-            subscriptionContext.Uses(businessContextDatabase, "", "JDBC");
+            subscriptionContext.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta", "JDBC");
 
             paymentContext.Uses(paypal, "", "JDBC");
-            paymentContext.Uses(businessContextDatabase, "", "JDBC");
+            paymentContext.Uses(paymentContextDatabase, "Lee desde y escribe hasta", "JDBC");
 
             externalToolsContext.Uses(googleCalendar, "Reserva de evento", "JSON");
             externalToolsContext.Uses(zoom, "Programa reunión", "JSON");
+            externalToolsContext.Uses(externalToolContextDatabase, "Lee desde y escribe hasta", "JDBC");
 
             zoom.Uses(externalToolsContext, "Retorna link de la reunión", "JSON");
 
@@ -135,7 +139,12 @@ namespace fas_c4_model
             externalToolsContext.AddTags("BoundedContext");
             paymentContext.AddTags("BoundedContext");
 
-            businessContextDatabase.AddTags("DataBase");
+            userContextDatabase.AddTags("DataBase");
+            sessionContextDatabase.AddTags("DataBase");
+            subscriptionContextDatabase.AddTags("DataBase");
+            paymentContextDatabase.AddTags("DataBase");
+            externalToolContextDatabase.AddTags("DataBase");
+
 
 
             styles.Add(new ElementStyle("MobileApp") { Background = "#9d33d6", Color = "#ffffff", Shape = Shape.MobileDevicePortrait, Icon = "" });
@@ -285,7 +294,7 @@ namespace fas_c4_model
             languageOfInterestService.Uses(languageOfInterestRepository, "Usa");
             /**/
             languageOfInterestService.Uses(userRepository, "Usa");
-            languageOfInterestRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            languageOfInterestRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Payment
             apiGateway.Uses(paymentsController, "", "JSON/HTTPS");
@@ -295,13 +304,13 @@ namespace fas_c4_model
             apiGateway.Uses(rolesController, "", "JSON/HTTPS");
             rolesController.Uses(roleService, "Llama a los métodos del Service");
             roleService.Uses(roleRepository, "Usa");
-            roleRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            roleRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Schedule 
             apiGateway.Uses(scheduleController, "", "JSON/HTTPS");
             scheduleController.Uses(scheduleService, "Llama a los métodos del Service");
             scheduleService.Uses(scheduleRepository, "Usa");
-            scheduleRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            scheduleRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Session Details 
             apiGateway.Uses(sessionDetailsController, "", "JSON/HTTPS");
@@ -309,7 +318,7 @@ namespace fas_c4_model
             sessionDetailService.Uses(sessionDetailRepository, "Usa");
             /**/
             sessionDetailService.Uses(sessionRepository, "Usa");
-            sessionDetailRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            sessionDetailRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Session 
             apiGateway.Uses(sessionsController, "", "JSON/HTTPS");
@@ -317,13 +326,13 @@ namespace fas_c4_model
             sessionService.Uses(sessionRepository, "Usa");
             /**/
             sessionService.Uses(userScheduleRepository, "Usa");
-            sessionRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            sessionRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Subscription 
             apiGateway.Uses(subscriptionsController, "", "JSON/HTTPS");
             subscriptionsController.Uses(subscriptionService, "Llama a los métodos del Service");
             subscriptionService.Uses(subscriptionRepository, "Usa");
-            subscriptionRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            subscriptionRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Topic Of Interest 
             apiGateway.Uses(topicOfInterestController, "", "JSON/HTTPS");
@@ -331,7 +340,7 @@ namespace fas_c4_model
             topicOfInterestService.Uses(topicOfInterestRepository, "Usa");
             /**/
             topicOfInterestService.Uses(userRepository, "Usa");
-            topicOfInterestRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            topicOfInterestRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: User 
             apiGateway.Uses(userController, "", "JSON/HTTPS");
@@ -343,7 +352,7 @@ namespace fas_c4_model
             userService.Uses(languageOfInterestRepository, "Usa");
             /**/
             userService.Uses(topicOfInterestRepository, "Usa");
-            userRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            userRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: User Languages
             apiGateway.Uses(userLanguageController, "", "JSON/HTTPS");
@@ -364,7 +373,7 @@ namespace fas_c4_model
             userScheduleService.Uses(userRepository, "Usa");
             /**/
             userScheduleService.Uses(scheduleRepository, "Usa");
-            userScheduleRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            userScheduleRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: User subscription
             apiGateway.Uses(userSubscriptionController, "", "JSON/HTTPS");
@@ -373,26 +382,29 @@ namespace fas_c4_model
             /**/
             userSubscriptionService.Uses(userRepository, "Usa");
             /**/
-            userSubscriptionService.Uses(subscriptionRepository, "Usa");
-            userSubscriptionRepository.Uses(businessContextDatabase, "Lee desde y escribe hasta");
+            userSubscriptionService.Uses(userSubscriptionRepository, "Usa");
+            userSubscriptionRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: External
             //Google Calendar
             apiGateway.Uses(googleCalendarController, "", "JSON/HTTPS");
             googleCalendarController.Uses(googleCalendarFacade, "Llama a los métodos del Service");
             googleCalendarFacade.Uses(googleCalendar, "Usa");
+            googleCalendarFacade.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
+            //userSubscriptionRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
 
             //Zoom
             apiGateway.Uses(zoomController, "", "JSON/HTTPS");
             zoomController.Uses(zoomFacade, "Llama a los métodos del Service");
             zoomFacade.Uses(zoom, "Usa");
+            zoomFacade.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Payment
             apiGateway.Uses(paypalController, "", "JSON/HTTPS");
             paypalController.Uses(paypal, "", "JSON/HTTPS");
             paypalController.Uses(paypalFacade, "", "JSON/HTTPS");
             paypalFacade.Uses(paypalRepository, "", "JSON/HTTPS");
-            paypalRepository.Uses(businessContextDatabase, "", "JSON/HTTPS");
+            paypalRepository.Uses(paymentContextDatabase, "", "JSON/HTTPS");
 
 
             // View - Components Diagram - Session Bounded Context
@@ -401,7 +413,7 @@ namespace fas_c4_model
             sessionComponentView.Add(mobileApplication);
             sessionComponentView.Add(webApplication);
             sessionComponentView.Add(apiGateway);
-            sessionComponentView.Add(businessContextDatabase);
+            sessionComponentView.Add(sessionContextDatabase);
             sessionComponentView.AddAllComponents();
 
             // View - Components Diagram - User Bounded Context
@@ -410,7 +422,7 @@ namespace fas_c4_model
             userComponentView.Add(mobileApplication);
             userComponentView.Add(webApplication);
             userComponentView.Add(apiGateway);
-            userComponentView.Add(businessContextDatabase);
+            userComponentView.Add(userContextDatabase);
             userComponentView.AddAllComponents();
 
             // View - Components Diagram - Subscription Bounded Context
@@ -419,7 +431,7 @@ namespace fas_c4_model
             subscriptionComponentView.Add(mobileApplication);
             subscriptionComponentView.Add(webApplication);
             subscriptionComponentView.Add(apiGateway);
-            subscriptionComponentView.Add(businessContextDatabase);
+            subscriptionComponentView.Add(subscriptionContextDatabase);
             subscriptionComponentView.AddAllComponents();
 
             // View - Components Diagram - External Bounded Context
@@ -429,6 +441,7 @@ namespace fas_c4_model
             externalToolsComponentView.Add(apiGateway);
             externalToolsComponentView.Add(googleCalendar);
             externalToolsComponentView.Add(zoom);
+            externalToolsComponentView.Add(externalToolContextDatabase);
             externalToolsComponentView.AddAllComponents();
 
             // View - Components Diagram - External Payment Context
@@ -440,52 +453,59 @@ namespace fas_c4_model
             paymentComponentView.Add(paypalFacade);
             paymentComponentView.Add(paypalRepository);
             paymentComponentView.Add(paypal);
-            paymentComponentView.Add(businessContextDatabase);
+            paymentComponentView.Add(paymentContextDatabase);
             paymentComponentView.AddAllComponents();
 
 
-
-            DeploymentNode liveWebServer = model.AddDeploymentNode("bigbank-web***", "A web server residing in the web server farm, accessed via F5 BIG-IP LTMs.", "Ubuntu 16.04 LTS", 8, DictionaryUtils.Create("Location=London"));
-            liveWebServer.AddDeploymentNode("Apache Tomcat", "An open source Java EE web server.", "Apache Tomcat 8.x", 1, DictionaryUtils.Create("Xmx=512M", "Xms=1024M", "Java Version=8"))
+            /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            DeploymentNode liveWebServer = model.AddDeploymentNode("IlanguageWebApp", "A web server residing in the web server farm, accessed via F5 BIG-IP LTMs.", "Firebase", 1, DictionaryUtils.Create("Location=London"));
+            liveWebServer.AddDeploymentNode("Web Application", "An open source Java EE web server.", "Spring Boot", 1, DictionaryUtils.Create("Xmx=512M", "Xms=1024M", "Java Version=8"))
                 .Add(webApplication);
 
-            DeploymentNode primaryDatabaseServer = model
-                .AddDeploymentNode("bigbank-db01", "The primary database server.", "Ubuntu 16.04 LTS", 1, DictionaryUtils.Create("Location=London"))
-                .AddDeploymentNode("Oracle - Primary", "The primary, live database server.", "Oracle 12c");
-            primaryDatabaseServer.Add(mobileApplication);
-            primaryDatabaseServer.Add(landingPage);
+            DeploymentNode landingPageNode = model
+                .AddDeploymentNode("IlanguageLP", "The primary database server.", "Ubuntu 16.04 LTS", 1, DictionaryUtils.Create("Location=London"))
+                .AddDeploymentNode("Navegador Web", "The primary, live database server.", "Chrome");
+            landingPageNode.Add(landingPage);
 
-            DeploymentNode secondaryDatabaseServer = model
-                .AddDeploymentNode("bigbank-db02", "The secondary database server.", "Ubuntu 16.04 LTS", 1, DictionaryUtils.Create("Location=Reading"))
-                .AddDeploymentNode("Oracle - Secondary", "A secondary, standby database server, used for failover purposes only.", "Oracle 12c");
-            ContainerInstance secondaryDatabase = secondaryDatabaseServer.Add(businessContextDatabase);
+            DeploymentNode mobileNode = model
+                .AddDeploymentNode("IlanguageMobileApp", "The primary database server.", "Ubuntu 16.04 LTS", 1, DictionaryUtils.Create("Location=London"))
+                .AddDeploymentNode("Dispositivo móvil del usuario", "The primary, live database server.", "Android");
+            mobileNode.Add(mobileApplication);
 
             DeploymentNode newNode = model
-                .AddDeploymentNode("AWS-Cloud Diagram", "The primary, live database server.", "Oracle 12c");
-            newNode.Add(apiGateway);
-            newNode.Add(userContext);
-            newNode.Add(paymentContext);
-            newNode.Add(subscriptionContext);
-            newNode.Add(sessionContext);
-            newNode.Add(externalToolsContext);
+                .AddDeploymentNode("AWS-Cloud Diagram", "The primary, live database server.", "AWS Cloud");
+            newNode.AddDeploymentNode("API Gateway", "The primary, live database server.", "Docker").Add(apiGateway);
+
+            newNode.AddDeploymentNode("User Context", "The primary, live database server.", "Docker").Add(userContext);
+            newNode.AddDeploymentNode("Payment Context", "The primary, live database server.", "Docker").Add(paymentContext);
+            newNode.AddDeploymentNode("Subscription Context", "The primary, live database server.", "Docker").Add(subscriptionContext);
+            newNode.AddDeploymentNode("Session Context", "The primary, live database server.", "Docker").Add(sessionContext);
+            newNode.AddDeploymentNode("External Tool Context", "The primary, live database server.", "Docker").Add(externalToolsContext);
+
+            newNode.AddDeploymentNode("User Persistance", "The primary, live database server.", "MySQL").Add(userContextDatabase);
+            newNode.AddDeploymentNode("Payment Persistance", "The primary, live database server.", "MySQL").Add(paymentContextDatabase);
+            newNode.AddDeploymentNode("Subscription Persistance", "The primary, live database server.", "MySQL").Add(subscriptionContextDatabase);
+            newNode.AddDeploymentNode("Session Persistance", "The primary, live database server.", "MySQL").Add(sessionContextDatabase);
+            newNode.AddDeploymentNode("External Tool Persistance", "The primary, live database server.", "MySQL").Add(externalToolContextDatabase);
+
+            
 
             DeploymentNode deployedLandingPage = model
                 .AddDeploymentNode("Oracle - Primary", "The primary, live database server.", "Oracle 12c");
-           
 
-            model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
-            Relationship dataReplicationRelationship = primaryDatabaseServer.Uses(secondaryDatabaseServer, "Replicates data to", "");
-            secondaryDatabase.AddTags("Failover");
+            //model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
+            Relationship dataReplicationRelationship = landingPageNode.Uses(liveWebServer, "Call Action To", "");
+            //secondaryDatabase.AddTags("Failover");
 
-            model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
-            Relationship dataPersistanceRelationship = liveWebServer.Uses(primaryDatabaseServer, "Escribe desde y lee hasta", "JDBC");
+            //model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
+            //Relationship dataPersistanceRelationship = liveWebServer.Uses(landingPageNode, "Escribe desde y lee hasta", "JDBC");
 
             DeploymentView liveDeploymentView = viewSet.CreateDeploymentView(tutoringSystem, "Deployment Diagram", "ILanguage Deployment Diagram");
             liveDeploymentView.Add(liveWebServer);
-            liveDeploymentView.Add(primaryDatabaseServer);
-            liveDeploymentView.Add(secondaryDatabaseServer);
-            liveDeploymentView.Add(dataReplicationRelationship);
             liveDeploymentView.Add(newNode);
+            liveDeploymentView.Add(mobileNode);
+            liveDeploymentView.Add(landingPageNode);
+            liveDeploymentView.PaperSize = PaperSize.A3_Landscape;
 
             structurizrClient.UnlockWorkspace(workspaceId);
             structurizrClient.PutWorkspace(workspaceId, workspace);
