@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Program.cs~RF82bf8dc.TMP" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Structurizr.Client" Version="0.9.7" />
   </ItemGroup>
 </Project>
