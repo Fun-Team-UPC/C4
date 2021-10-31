@@ -80,6 +80,7 @@ namespace fas_c4_model
             Container landingPage = tutoringSystem.AddContainer("Landing Page", "", "Flutter Web");
 
             Container apiGateway = tutoringSystem.AddContainer("API Gateway", "API Gateway", "Spring Boot port 8080");
+            Container messageBus = tutoringSystem.AddContainer("Bus de Mensajes en Cluster de Alta Disponibilidad", "Transporte de eventos del dominio.", "RabbitMQ");
 
             Container sessionContext = tutoringSystem.AddContainer("Session Bounded Context", "Bounded Context para gestión de sesiones", "Spring Boot port 8085");
             Container userContext = tutoringSystem.AddContainer("User Bounded Context", "Bounded Context para gestión de usuarios", "Spring Boot port 8081");
@@ -113,17 +114,22 @@ namespace fas_c4_model
             apiGateway.Uses(paymentContext, "API Request", "JSON/HTTPS");
 
             sessionContext.Uses(sessionContextDatabase, "Lee desde y escribe hasta", "JDBC");
+            sessionContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
 
             userContext.Uses(userContextDatabase, "Lee desde y escribe hasta", "JDBC");
+            userContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
 
             subscriptionContext.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta", "JDBC");
+            subscriptionContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
 
             paymentContext.Uses(paypal, "", "JDBC");
             paymentContext.Uses(paymentContextDatabase, "Lee desde y escribe hasta", "JDBC");
+            paymentContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
 
             externalToolsContext.Uses(googleCalendar, "Reserva de evento", "JSON");
             externalToolsContext.Uses(zoom, "Programa reunión", "JSON");
             externalToolsContext.Uses(externalToolContextDatabase, "Lee desde y escribe hasta", "JDBC");
+            externalToolsContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
 
             zoom.Uses(externalToolsContext, "Retorna link de la reunión", "JSON");
 
@@ -132,6 +138,7 @@ namespace fas_c4_model
             webApplication.AddTags("WebApp");
             landingPage.AddTags("LandingPage");
             apiGateway.AddTags("APIGateway");
+            messageBus.AddTags("MessageBus");
 
             sessionContext.AddTags("BoundedContext");
             userContext.AddTags("BoundedContext");
@@ -151,7 +158,7 @@ namespace fas_c4_model
             styles.Add(new ElementStyle("WebApp") { Background = "#9d33d6", Color = "#ffffff", Shape = Shape.WebBrowser, Icon = "" });
             styles.Add(new ElementStyle("LandingPage") { Background = "#929000", Color = "#ffffff", Shape = Shape.WebBrowser, Icon = "" });
             styles.Add(new ElementStyle("APIGateway") { Shape = Shape.RoundedBox, Background = "#0000ff", Color = "#ffffff", Icon = "" });
-
+            styles.Add(new ElementStyle("MessageBus") { Width = 850, Background = "#fd8208", Color = "#ffffff", Shape = Shape.Pipe, Icon = "" });
             styles.Add(new ElementStyle("BoundedContext") { Shape = Shape.Hexagon, Background = "#facc2e", Icon = "" });
             styles.Add(new ElementStyle("DataBase") { Shape = Shape.Cylinder, Background = "#ff0000", Color = "#ffffff", Icon = "" });
 
@@ -166,121 +173,116 @@ namespace fas_c4_model
             //---------------------------//---------------------------//
 
             // Components Diagram - Session Bounded Context
-            Component scheduleController = sessionContext.AddComponent("Schedule Controller", "REST API endpoints de Schedule", "Spring Boot REST Controller");
-            Component sessionDetailsController = sessionContext.AddComponent("Session Details Controller", "REST API endpoints de Session Details", "Spring Boot REST Controller");
-            Component sessionsController = sessionContext.AddComponent("Sessions Controller", "REST API endpoints de Session", "Spring Boot REST Controller");
+            Component sessionQueryController = sessionContext.AddComponent("Session Query Controller", "REST API endpoints de Session Details", "Spring Boot REST Controller");
+            Component sessionsCommandController = sessionContext.AddComponent("Sessions Command Controller", "REST API endpoints de Session", "Spring Boot REST Controller");
+            
+            Component sessionComandService = sessionContext.AddComponent("Session Command Service", "Provee métodos para Session, pertenece a la capa Application de DDD", "Spring Component");
 
-            Component scheduleService = sessionContext.AddComponent("Schedule Service", "Provee métodos para Schedule, pertenece a la capa Application de DDD", "Spring Component");
-            Component sessionDetailService = sessionContext.AddComponent("Session Detail Service", "Provee métodos para Schedule Detail, pertenece a la capa Application de DDD", "Spring Component");
-            Component sessionService = sessionContext.AddComponent("Session Service", "Provee métodos para Session, pertenece a la capa Application de DDD", "Spring Component");
-
-            Component scheduleRepository = sessionContext.AddComponent("Schedule Repository", "Provee los métodos para la persistencia de datos de Schedule", "Spring Component");
-            Component sessionDetailRepository = sessionContext.AddComponent("Session Details Repository", "Provee los métodos para la persistencia de datos de Session Detail", "Spring Component");
             Component sessionRepository = sessionContext.AddComponent("Session Repository", "Provee los métodos para la persistencia de datos de Session", "Spring Component");
+
+            Component domainLayer = sessionContext.AddComponent("Domain Layer", "Contiene las entidades Core del microservicio", "Spring Component");
 
 
             // Components Diagram - User Bounded Context
-            Component languageOfInterestController = userContext.AddComponent("Language Of Interest Controller", "REST API endpoints de monitoreo.", "Spring Boot REST Controller");
-            Component rolesController = userContext.AddComponent("Roles Controller", "REST API endpoints de Roles", "Spring Boot REST Controller");
-            Component topicOfInterestController = userContext.AddComponent("Topic Of Interest Controller", "REST API endpoints de Topic of Interest", "Spring Boot REST Controller");
-            Component userController = userContext.AddComponent("User Controller", "REST API endpoints de User", "Spring Boot REST Controller");
-            Component userLanguageController = userContext.AddComponent("Language Controller", "REST API endpoints de User Language", "Spring Boot REST Controller");
-            Component userScheduleController = userContext.AddComponent("user Schedule Controller", "REST API endpoints de User Schedule", "Spring Boot REST Controller");
-            Component userSubscriptionController = userContext.AddComponent("User Subscription Controller", "REST API endpoints de User Subscription", "Spring Boot REST Controller");
-            Component userTopicsController = userContext.AddComponent("User Topics Controller", "REST API endpoints de User Topics", "Spring Boot REST Controller");
+            Component languageCommandController = userContext.AddComponent("Language Command Controller", "REST API endpoints de monitoreo.", "Spring Boot REST Controller");
+            Component roleCommandController = userContext.AddComponent("Role Command Controller", "REST API endpoints de Roles", "Spring Boot REST Controller");
+            Component topicCommandController = userContext.AddComponent("Topic Command Controller", "REST API endpoints de Topic of Interest", "Spring Boot REST Controller");
+            Component userCommandController = userContext.AddComponent("User Command Controller", "REST API endpoints de User", "Spring Boot REST Controller");
+            
+            Component languageQueryController = userContext.AddComponent("Language Query Controller", "REST API endpoints de monitoreo.", "Spring Boot REST Controller");
+            Component roleQueryController = userContext.AddComponent("Role Query Controller", "REST API endpoints de Roles", "Spring Boot REST Controller");
+            Component topicQueryController = userContext.AddComponent("Topic Query Controller", "REST API endpoints de Topic of Interest", "Spring Boot REST Controller");
+            Component userQueryController = userContext.AddComponent("User Query Controller", "REST API endpoints de User", "Spring Boot REST Controller");
 
-            Component languageOfInterestService = userContext.AddComponent("Language Of Interest Service", "Provee métodos para el monitoreo, pertenece a la capa Application de DDD", "Spring Component");
-            Component roleService = userContext.AddComponent("Role Service", "Provee métodos para Role, pertenece a la capa Application de DDD", "Spring Component");
-            Component topicOfInterestService = userContext.AddComponent("Topic Of Interes Service", "Provee métodos para Topic of Interest, pertenece a la capa Application de DDD", "Spring Component");
-            Component userService = userContext.AddComponent("User Service", "Provee métodos para User, pertenece a la capa Application de DDD", "Spring Component");
-            Component userScheduleService = userContext.AddComponent("User Schedule Service", "Provee métodos para User Schedule, pertenece a la capa Application de DDD", "Spring Component");
-            Component userSubscriptionService = userContext.AddComponent("User Subscription Service", "Provee métodos para User Subscription, pertenece a la capa Application -de DDD", "Spring Component");
-
-            Component languageOfInterestRepository = userContext.AddComponent("Language Of Interest Repository", "Provee los métodos para la persistencia de datos de Laguage of interest", "Spring Component");
+            Component languageApplicationService = userContext.AddComponent("Language Application Service", "Provee métodos para el monitoreo, pertenece a la capa Application de DDD", "Spring Component");
+            Component roleApplicationService = userContext.AddComponent("Role Application Service", "Provee métodos para Role, pertenece a la capa Application de DDD", "Spring Component");
+            Component topicApplicationService = userContext.AddComponent("Topic Application Service", "Provee métodos para Topic of Interest, pertenece a la capa Application de DDD", "Spring Component");
+            Component userApplicationService = userContext.AddComponent("User Application Service", "Provee métodos para User, pertenece a la capa Application de DDD", "Spring Component");
+            
+            Component languageRepository = userContext.AddComponent("Language Repository", "Provee los métodos para la persistencia de datos de Laguage of interest", "Spring Component");
             Component roleRepository = userContext.AddComponent("Role Repository", "Provee los métodos para la persistencia de datos de Role", "Spring Component");
-            Component topicOfInterestRepository = userContext.AddComponent("Topic Of Interes Repository", "Provee los métodos para la persistencia de datos de Topic of Interest", "Spring Component");
+            Component topicRepository = userContext.AddComponent("Topic Repository", "Provee los métodos para la persistencia de datos de Topic of Interest", "Spring Component");
             Component userRepository = userContext.AddComponent("User Repository", "Provee los métodos para la persistencia de datos de Laguage of User", "Spring Component");
-            Component userScheduleRepository = userContext.AddComponent("User Schedule Repository", "Provee los métodos para la persistencia de datos de User Schedule", "Spring Component");
-            Component userSubscriptionRepository = userContext.AddComponent("User Subscription Repository", "Provee los métodos para la persistencia de datos de User Schedule", "Spring Component");
-
+            
 
             // Components Diagram - Subscription Bounded Context
-            Component paymentsController = subscriptionContext.AddComponent("Payment Controller", "REST API endpoints de Payment", "Spring Boot REST Controller");
-            Component subscriptionsController = subscriptionContext.AddComponent("Subscriptions Controller", "REST API endpoints de Subscription", "Spring Boot REST Controller");
+            Component subscriptionCommandController = subscriptionContext.AddComponent("Subscription Command Controller", "REST API endpoints de Payment", "Spring Boot REST Controller");
+            Component subscriptionQueryController = subscriptionContext.AddComponent("Subscriptions Controller", "REST API endpoints de Subscription", "Spring Boot REST Controller");
 
-            Component paymentsService = subscriptionContext.AddComponent("Payments Service", "Provee métodos para Payment, pertenece a la capa Application de DDD", "Spring Component");
-            Component subscriptionService = subscriptionContext.AddComponent("Subscription Service", "Provee métodos para Subscription, pertenece a la capa Application de DDD", "Spring Component");
+            Component subscriptionApplicationService = subscriptionContext.AddComponent("Subscription Application Service", "Provee métodos para Subscription, pertenece a la capa Application de DDD", "Spring Component");
 
             Component subscriptionRepository = subscriptionContext.AddComponent("Subscription Repository", "Provee los métodos para la persistencia de datos de Subscription", "Spring Component");
 
             // Components Diagram - External Tools Bounded Context
-            Component googleCalendarController = externalToolsContext.AddComponent("Google Calendar Controller", "REST API ", "Spring Boot REST Controller");
-            Component googleCalendarFacade = externalToolsContext.AddComponent("Google Calendar Facade", "", "Spring Component");
-            Component zoomController = externalToolsContext.AddComponent("Zoom Controller", "REST API ", "Spring Boot REST Controller");
-            Component zoomFacade = externalToolsContext.AddComponent("Zoom Facade", "", "Spring Component");
+            Component externalToolController = externalToolsContext.AddComponent("External Tool Command Controller", "REST API ", "Spring Boot REST Controller");
+            Component externalToolRespository = externalToolsContext.AddComponent("External Tool Repository", "", "Spring Component");
+            Component externalQueryController = externalToolsContext.AddComponent("External Tool Query Controller", "REST API ", "Spring Boot REST Controller");
+            Component externalApplicationService = externalToolsContext.AddComponent("External Tool Application Service", "", "Spring Component");
 
-            // Components Diagram - External Tools Bounded Context
-            Component paypalController = paymentContext.AddComponent("Paypal Controller", "REST API ", "Spring Boot REST Controller");
+            // Components Diagram - Payment Bounded Context
+            Component paymentCommandController = paymentContext.AddComponent("Payment Command Controller", "REST API ", "Spring Boot REST Controller");
+            Component paymentQueryController = paymentContext.AddComponent("Payment Query Controller", "REST API ", "Spring Boot REST Controller");
+
+            Component transactionCommandController = paymentContext.AddComponent("Transaction Command Controller", "REST API ", "Spring Boot REST Controller");
+            Component transactionQueryController = paymentContext.AddComponent("Transaction Query Controller", "REST API ", "Spring Boot REST Controller");
+
+            Component paymentApplicationService = paymentContext.AddComponent("Payment Application Service", "", "Spring Component");
+            Component transactionApplicationService = paymentContext.AddComponent("Transaction Application Service", "", "Spring Component");
+
             Component paypalFacade = paymentContext.AddComponent("Paypal Facade", "", "Spring Component");
-            Component paypalRepository = paymentContext.AddComponent("Paypal Repository", "", "Spring Component");
+
+            Component paymentRepository = paymentContext.AddComponent("Payment Repository", "", "Spring Component");
+            Component transactionRepository = paymentContext.AddComponent("Transaction Repository", "", "Spring Component");
 
             // Tags
-            languageOfInterestController.AddTags("Controller");
-            languageOfInterestService.AddTags("Service");
-            languageOfInterestRepository.AddTags("Repository");
+            languageCommandController.AddTags("Controller");
+            languageQueryController.AddTags("Controller");
+            languageApplicationService.AddTags("Service");
+            languageRepository.AddTags("Repository");
 
-            paymentsController.AddTags("Controller");
-            paymentsService.AddTags("Service");
-
-            rolesController.AddTags("Controller");
-            roleService.AddTags("Service");
+            roleCommandController.AddTags("Controller");
+            roleQueryController.AddTags("Controller");
+            roleApplicationService.AddTags("Service");
             roleRepository.AddTags("Repository");
 
-            scheduleController.AddTags("Controller");
-            scheduleService.AddTags("Service");
-            scheduleRepository.AddTags("Repository");
+            sessionQueryController.AddTags("Controller");
 
-            sessionDetailsController.AddTags("Controller");
-            sessionDetailService.AddTags("Service");
-            sessionDetailRepository.AddTags("Repository");
-
-            sessionsController.AddTags("Controller");
-            sessionService.AddTags("Service");
+            sessionsCommandController.AddTags("Controller");
+            sessionComandService.AddTags("Service");
             sessionRepository.AddTags("Repository");
+            domainLayer.AddTags("Repository");
 
-            subscriptionsController.AddTags("Controller");
-            subscriptionService.AddTags("Service");
+            subscriptionCommandController.AddTags("Controller");
+            subscriptionQueryController.AddTags("Controller");
+            subscriptionApplicationService.AddTags("Service");
             subscriptionRepository.AddTags("Repository");
 
-            topicOfInterestController.AddTags("Controller");
-            topicOfInterestService.AddTags("Service");
-            topicOfInterestRepository.AddTags("Repository");
+            topicCommandController.AddTags("Controller");
+            topicQueryController.AddTags("Controller");
+            topicApplicationService.AddTags("Service");
+            topicRepository.AddTags("Repository");
 
-            userController.AddTags("Controller");
-            userService.AddTags("Service");
+            userCommandController.AddTags("Controller");
+            userQueryController.AddTags("Controller");
+            userApplicationService.AddTags("Service");
             userRepository.AddTags("Repository");
 
-            userLanguageController.AddTags("Controller");
+            externalToolController.AddTags("Controller");
+            externalToolRespository.AddTags("Repository");
 
-            userScheduleController.AddTags("Controller");
-            userScheduleService.AddTags("Service");
-            userScheduleRepository.AddTags("Repository");
+            externalQueryController.AddTags("Controller");
+            externalApplicationService.AddTags("Service");
 
-            userSubscriptionController.AddTags("Controller");
-            userSubscriptionService.AddTags("Service");
-            userSubscriptionRepository.AddTags("Repository");
-
-            userTopicsController.AddTags("Controller");
-
-            googleCalendarController.AddTags("Controller");
-            googleCalendarFacade.AddTags("Service");
-
-            zoomController.AddTags("Controller");
-            zoomFacade.AddTags("Service");
-
-            paypalController.AddTags("Controller");
+            paymentCommandController.AddTags("Controller");
+            paymentQueryController.AddTags("Controller");
+            transactionCommandController.AddTags("Controller");
+            transactionQueryController.AddTags("Controller");
+            paymentApplicationService.AddTags("Service");
+            transactionApplicationService.AddTags("Service");
+            paymentRepository.AddTags("Repository");
+            transactionRepository.AddTags("Repository");
             paypalFacade.AddTags("Service");
-            paypalRepository.AddTags("Repository");
+
 
             styles.Add(new ElementStyle("Controller") { Shape = Shape.Component, Background = "#FDFF8B", Icon = "" });
             styles.Add(new ElementStyle("Service") { Shape = Shape.Component, Background = "#FEF535", Icon = "" });
@@ -288,128 +290,104 @@ namespace fas_c4_model
 
 
 
-            //Component connection: Language Of Interest 
-            apiGateway.Uses(languageOfInterestController, "", "JSON/HTTPS");
-            languageOfInterestController.Uses(languageOfInterestService, "Llama a los métodos del Service");
-            languageOfInterestService.Uses(languageOfInterestRepository, "Usa");
+            //Component connection: Language
+            apiGateway.Uses(languageCommandController, "", "JSON/HTTPS");
+            apiGateway.Uses(languageQueryController, "", "JSON/HTTPS");
+            languageCommandController.Uses(languageApplicationService, "Llama a los métodos del Service");
+            languageApplicationService.Uses(domainLayer, "Usa");
+            languageQueryController.Uses(languageRepository, "Usa");
             /**/
-            languageOfInterestService.Uses(userRepository, "Usa");
-            languageOfInterestRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
-
-            //Component connection: Payment
-            apiGateway.Uses(paymentsController, "", "JSON/HTTPS");
-            paymentsController.Uses(paymentsService, "Llama a los métodos del Service");
+            languageQueryController.Uses(userRepository, "Usa");
+            languageRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Role 
-            apiGateway.Uses(rolesController, "", "JSON/HTTPS");
-            rolesController.Uses(roleService, "Llama a los métodos del Service");
-            roleService.Uses(roleRepository, "Usa");
+            apiGateway.Uses(roleCommandController, "", "JSON/HTTPS");
+            apiGateway.Uses(roleQueryController, "", "JSON/HTTPS");
+            roleCommandController.Uses(roleApplicationService, "Llama a los métodos del Service");
+            roleApplicationService.Uses(domainLayer, "Usa");
+            roleQueryController.Uses(roleRepository, "Usa");
             roleRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
-            //Component connection: Schedule 
-            apiGateway.Uses(scheduleController, "", "JSON/HTTPS");
-            scheduleController.Uses(scheduleService, "Llama a los métodos del Service");
-            scheduleService.Uses(scheduleRepository, "Usa");
-            scheduleRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
-
             //Component connection: Session Details 
-            apiGateway.Uses(sessionDetailsController, "", "JSON/HTTPS");
-            sessionDetailsController.Uses(sessionDetailService, "Llama a los métodos del Service");
-            sessionDetailService.Uses(sessionDetailRepository, "Usa");
+            apiGateway.Uses(sessionQueryController, "", "JSON/HTTPS");
+            sessionQueryController.Uses(sessionRepository, "Usa");
             /**/
-            sessionDetailService.Uses(sessionRepository, "Usa");
-            sessionDetailRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
-
-            //Component connection: Session 
-            apiGateway.Uses(sessionsController, "", "JSON/HTTPS");
-            sessionsController.Uses(sessionService, "Llama a los métodos del Service");
-            sessionService.Uses(sessionRepository, "Usa");
-            /**/
-            sessionService.Uses(userScheduleRepository, "Usa");
             sessionRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
 
+            //Component connection: Session 
+            apiGateway.Uses(sessionsCommandController, "", "JSON/HTTPS");
+            sessionsCommandController.Uses(sessionComandService, "Llama a los métodos del Service");
+            sessionComandService.Uses(domainLayer, "Usa");
+            /**/
+
             //Component connection: Subscription 
-            apiGateway.Uses(subscriptionsController, "", "JSON/HTTPS");
-            subscriptionsController.Uses(subscriptionService, "Llama a los métodos del Service");
-            subscriptionService.Uses(subscriptionRepository, "Usa");
+            apiGateway.Uses(subscriptionQueryController, "", "JSON/HTTPS");
+            apiGateway.Uses(subscriptionCommandController, "", "JSON/HTTPS");
+            subscriptionCommandController.Uses(subscriptionApplicationService, "Usa");
+            subscriptionApplicationService.Uses(domainLayer, "Usa");
+            subscriptionQueryController.Uses(subscriptionRepository, "Usa");
             subscriptionRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Topic Of Interest 
-            apiGateway.Uses(topicOfInterestController, "", "JSON/HTTPS");
-            topicOfInterestController.Uses(topicOfInterestService, "Llama a los métodos del Service");
-            topicOfInterestService.Uses(topicOfInterestRepository, "Usa");
+            apiGateway.Uses(topicCommandController, "", "JSON/HTTPS");
+            apiGateway.Uses(topicQueryController, "", "JSON/HTTPS");
+            topicCommandController.Uses(topicApplicationService, "Llama a los métodos del Service");
+            topicApplicationService.Uses(domainLayer, "Usa");
+            topicQueryController.Uses(topicRepository, "Usa");
             /**/
-            topicOfInterestService.Uses(userRepository, "Usa");
-            topicOfInterestRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
+            topicRepository.Uses(userRepository, "Usa");
+            topicRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: User 
-            apiGateway.Uses(userController, "", "JSON/HTTPS");
-            userController.Uses(userService, "Llama a los métodos del Service");
-            userService.Uses(userRepository, "Usa");
+            apiGateway.Uses(userCommandController, "", "JSON/HTTPS");
+            apiGateway.Uses(userQueryController, "", "JSON/HTTPS");
+            userCommandController.Uses(userApplicationService, "Llama a los métodos del Service");
+            userApplicationService.Uses(domainLayer, "Usa");
+            userQueryController.Uses(userRepository, "Usa");
             /**/
-            userService.Uses(roleRepository, "Usa");
+            userQueryController.Uses(roleRepository, "Usa");
             /**/
-            userService.Uses(languageOfInterestRepository, "Usa");
+            userQueryController.Uses(languageRepository, "Usa");
             /**/
-            userService.Uses(topicOfInterestRepository, "Usa");
+            userQueryController.Uses(topicRepository, "Usa");
             userRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
-            //Component connection: User Languages
-            apiGateway.Uses(userLanguageController, "", "JSON/HTTPS");
-            userLanguageController.Uses(languageOfInterestService, "Llama a los métodos del Service");
-            /**/
-            userLanguageController.Uses(userService, "Llama a los métodos del Service");
-
-            //Component connection: User Topics
-            apiGateway.Uses(userTopicsController, "", "JSON/HTTPS");
-            userTopicsController.Uses(userService, "Llama a los métodos del Service");
-            userTopicsController.Uses(topicOfInterestService, "Llama a los métodos del Service");
-
-            //Component connection: User Schedule
-            apiGateway.Uses(userScheduleController, "", "JSON/HTTPS");
-            userScheduleController.Uses(userScheduleService, "Llama a los métodos del Service");
-            userScheduleService.Uses(userScheduleRepository, "Usa");
-            /**/
-            userScheduleService.Uses(userRepository, "Usa");
-            /**/
-            userScheduleService.Uses(scheduleRepository, "Usa");
-            userScheduleRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
-
-            //Component connection: User subscription
-            apiGateway.Uses(userSubscriptionController, "", "JSON/HTTPS");
-            userSubscriptionController.Uses(userSubscriptionService, "Llama a los métodos del Service");
-            userSubscriptionService.Uses(userSubscriptionRepository, "Usa");
-            /**/
-            userSubscriptionService.Uses(userRepository, "Usa");
-            /**/
-            userSubscriptionService.Uses(userSubscriptionRepository, "Usa");
-            userSubscriptionRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: External
             //Google Calendar
-            apiGateway.Uses(googleCalendarController, "", "JSON/HTTPS");
-            googleCalendarController.Uses(googleCalendarFacade, "Llama a los métodos del Service");
-            googleCalendarFacade.Uses(googleCalendar, "Usa");
-            googleCalendarFacade.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
+            apiGateway.Uses(externalQueryController, "", "JSON/HTTPS");
+            externalQueryController.Uses(externalToolRespository, "Llama a los métodos del Service");
+            externalToolRespository.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
             //userSubscriptionRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
 
             //Zoom
-            apiGateway.Uses(zoomController, "", "JSON/HTTPS");
-            zoomController.Uses(zoomFacade, "Llama a los métodos del Service");
-            zoomFacade.Uses(zoom, "Usa");
-            zoomFacade.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
+            apiGateway.Uses(externalToolController, "", "JSON/HTTPS");
+            externalToolController.Uses(externalApplicationService, "Llama a los métodos del Service");
+            externalApplicationService.Uses(domainLayer, "Usa");
+            externalApplicationService.Uses(zoom, "Usa");
+            externalApplicationService.Uses(googleCalendar, "Usa");
 
             //Component connection: Payment
-            apiGateway.Uses(paypalController, "", "JSON/HTTPS");
-            paypalController.Uses(paypal, "", "JSON/HTTPS");
-            paypalController.Uses(paypalFacade, "", "JSON/HTTPS");
-            paypalFacade.Uses(paypalRepository, "", "JSON/HTTPS");
-            paypalRepository.Uses(paymentContextDatabase, "", "JSON/HTTPS");
+            apiGateway.Uses(paymentCommandController, "", "JSON/HTTPS");
+            apiGateway.Uses(paymentQueryController, "", "JSON/HTTPS");
+            apiGateway.Uses(transactionCommandController, "", "JSON/HTTPS");
+            apiGateway.Uses(transactionQueryController, "", "JSON/HTTPS");
+            transactionCommandController.Uses(transactionApplicationService, "", "Llama a los métodos del Service");
+            transactionQueryController.Uses(transactionRepository, "", "JSON/HTTPS");
+            transactionRepository.Uses(paymentContextDatabase, "", "Lee desde y escribe hasta");
+            paymentQueryController.Uses(paymentRepository, "", "JSON/HTTPS");
+            paymentCommandController.Uses(paymentApplicationService, "", "Llama a los métodos del Service");
+            paymentApplicationService.Uses(paypalFacade, "", "Usa");
+            transactionApplicationService.Uses(domainLayer, "", "Usa");
+            paymentApplicationService.Uses(domainLayer, "", "Usa");
+            paypalFacade.Uses(paypal, "", "Usa");
+            paymentRepository.Uses(paymentContextDatabase, "", "Lee desde y escribe hasta");
+
 
 
             // View - Components Diagram - Session Bounded Context
             ComponentView sessionComponentView = viewSet.CreateComponentView(sessionContext, "Session Bounded Context's Components", "Component Diagram");
-            sessionComponentView.PaperSize = PaperSize.A3_Landscape;
+            sessionComponentView.PaperSize = PaperSize.A4_Landscape;
             sessionComponentView.Add(mobileApplication);
             sessionComponentView.Add(webApplication);
             sessionComponentView.Add(apiGateway);
@@ -422,38 +400,44 @@ namespace fas_c4_model
             userComponentView.Add(mobileApplication);
             userComponentView.Add(webApplication);
             userComponentView.Add(apiGateway);
+            userComponentView.Add(domainLayer);
             userComponentView.Add(userContextDatabase);
             userComponentView.AddAllComponents();
 
             // View - Components Diagram - Subscription Bounded Context
             ComponentView subscriptionComponentView = viewSet.CreateComponentView(subscriptionContext, "Subscription Bounded Context's Components", "Component Diagram");
-            subscriptionComponentView.PaperSize = PaperSize.A3_Landscape;
+            subscriptionComponentView.PaperSize = PaperSize.A4_Landscape;
             subscriptionComponentView.Add(mobileApplication);
             subscriptionComponentView.Add(webApplication);
             subscriptionComponentView.Add(apiGateway);
             subscriptionComponentView.Add(subscriptionContextDatabase);
+            subscriptionComponentView.Add(domainLayer);
             subscriptionComponentView.AddAllComponents();
 
             // View - Components Diagram - External Bounded Context
             ComponentView externalToolsComponentView = viewSet.CreateComponentView(externalToolsContext, "External Tools Bounded Context's Components", "Component Diagram");
+            externalToolsComponentView.PaperSize = PaperSize.A4_Landscape;
             externalToolsComponentView.Add(mobileApplication);
             externalToolsComponentView.Add(webApplication);
             externalToolsComponentView.Add(apiGateway);
             externalToolsComponentView.Add(googleCalendar);
             externalToolsComponentView.Add(zoom);
             externalToolsComponentView.Add(externalToolContextDatabase);
+            externalToolsComponentView.Add(domainLayer);
             externalToolsComponentView.AddAllComponents();
 
             // View - Components Diagram - External Payment Context
             ComponentView paymentComponentView = viewSet.CreateComponentView(paymentContext, "Payment Bounded Context's Components", "Component Diagram");
             paymentComponentView.Add(mobileApplication);
+            paymentComponentView.PaperSize = PaperSize.A3_Landscape;
             paymentComponentView.Add(webApplication);
             paymentComponentView.Add(apiGateway);
-            paymentComponentView.Add(paypalController);
+            paymentComponentView.Add(paymentCommandController);
             paymentComponentView.Add(paypalFacade);
-            paymentComponentView.Add(paypalRepository);
+            paymentComponentView.Add(paymentRepository);
             paymentComponentView.Add(paypal);
             paymentComponentView.Add(paymentContextDatabase);
+            paymentComponentView.Add(domainLayer);
             paymentComponentView.AddAllComponents();
 
 
