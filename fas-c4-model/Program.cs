@@ -457,7 +457,7 @@ namespace fas_c4_model
             mobileNode.Add(mobileApplication);
 
             DeploymentNode newNode = model
-                .AddDeploymentNode("AWS-Cloud Diagram", "The primary, live database server.", "AWS Cloud");
+                .AddDeploymentNode("Google-Cloud Diagram", "The primary, live database server.", "Google Cloud");
             newNode.AddDeploymentNode("API Gateway", "The primary, live database server.", "Docker").Add(apiGateway);
 
             newNode.AddDeploymentNode("User Context", "The primary, live database server.", "Docker").Add(userContext);
@@ -466,28 +466,26 @@ namespace fas_c4_model
             newNode.AddDeploymentNode("Session Context", "The primary, live database server.", "Docker").Add(sessionContext);
             newNode.AddDeploymentNode("External Tool Context", "The primary, live database server.", "Docker").Add(externalToolsContext);
 
-            newNode.AddDeploymentNode("User Persistance", "The primary, live database server.", "MySQL").Add(userContextDatabase);
-            newNode.AddDeploymentNode("Payment Persistance", "The primary, live database server.", "MySQL").Add(paymentContextDatabase);
-            newNode.AddDeploymentNode("Subscription Persistance", "The primary, live database server.", "MySQL").Add(subscriptionContextDatabase);
-            newNode.AddDeploymentNode("Session Persistance", "The primary, live database server.", "MySQL").Add(sessionContextDatabase);
-            newNode.AddDeploymentNode("External Tool Persistance", "The primary, live database server.", "MySQL").Add(externalToolContextDatabase);
+            DeploymentNode dataBaseNode = model
+                .AddDeploymentNode("Azure-Cloud Diagram", "The primary, live database server.", "Azure Database for MySQL");
+            dataBaseNode.AddDeploymentNode("User Persistance", "The primary, live database server.", "MySQL").Add(userContextDatabase);
+            dataBaseNode.AddDeploymentNode("Payment Persistance", "The primary, live database server.", "MySQL").Add(paymentContextDatabase);
+            dataBaseNode.AddDeploymentNode("Subscription Persistance", "The primary, live database server.", "MySQL").Add(subscriptionContextDatabase);
+            dataBaseNode.AddDeploymentNode("Session Persistance", "The primary, live database server.", "MySQL").Add(sessionContextDatabase);
+            dataBaseNode.AddDeploymentNode("External Tool Persistance", "The primary, live database server.", "MySQL").Add(externalToolContextDatabase);
 
             
 
             DeploymentNode deployedLandingPage = model
                 .AddDeploymentNode("Oracle - Primary", "The primary, live database server.", "Oracle 12c");
 
-            //model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
             Relationship dataReplicationRelationship = landingPageNode.Uses(liveWebServer, "Call Action To", "");
-            //secondaryDatabase.AddTags("Failover");
-
-            //model.Relationships.Where(r => r.Destination.Equals(secondaryDatabase)).ToList().ForEach(r => r.AddTags("Failover"));
-            //Relationship dataPersistanceRelationship = liveWebServer.Uses(landingPageNode, "Escribe desde y lee hasta", "JDBC");
 
             DeploymentView liveDeploymentView = viewSet.CreateDeploymentView(tutoringSystem, "Deployment Diagram", "ILanguage Deployment Diagram");
             liveDeploymentView.Add(liveWebServer);
             liveDeploymentView.Add(newNode);
             liveDeploymentView.Add(mobileNode);
+            liveDeploymentView.Add(dataBaseNode);
             liveDeploymentView.Add(landingPageNode);
             liveDeploymentView.PaperSize = PaperSize.A3_Landscape;
 
