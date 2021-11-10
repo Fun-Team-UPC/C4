@@ -94,6 +94,10 @@ namespace fas_c4_model
             Container paymentContextDatabase = tutoringSystem.AddContainer("Payment Context DB", "", "MySQL");
             Container externalToolContextDatabase = tutoringSystem.AddContainer("External Tool Context DB", "", "MySQL");
 
+            Container userSubscriptionContext = tutoringSystem.AddContainer("User-Subscription Bounded Context", "Bounded Context para la comunicación y validación de información", "Spring Boot port 8085");
+            Container userSubscriptionContextDatabase = tutoringSystem.AddContainer("User-Subscription Context DB", "", "MySQL");
+            Container sessionInteractionContext = tutoringSystem.AddContainer("Session Interaction Bounded Context", "Bounded Context para la comunicación y validación de información", "Spring Boot port 8085");
+            Container sessionInteractionContextDatabase = tutoringSystem.AddContainer("Session Interaction Context DB", "", "MySQL");
 
             student.Uses(mobileApplication, "Consulta");
             student.Uses(webApplication, "Consulta");
@@ -124,7 +128,9 @@ namespace fas_c4_model
 
             paymentContext.Uses(paypal, "", "JDBC");
             paymentContext.Uses(paymentContextDatabase, "Lee desde y escribe hasta", "JDBC");
+
             paymentContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
+
 
             externalToolsContext.Uses(googleCalendar, "Reserva de evento", "JSON");
             externalToolsContext.Uses(zoom, "Programa reunión", "JSON");
@@ -132,6 +138,11 @@ namespace fas_c4_model
             externalToolsContext.Uses(messageBus, "Envia registro de acciones", "JDBC");
 
             zoom.Uses(externalToolsContext, "Retorna link de la reunión", "JSON");
+
+            userSubscriptionContext.Uses(messageBus, "Valida los datos tipo User", "JSON");
+            userSubscriptionContext.Uses(userSubscriptionContextDatabase, "Lee desde y escribe hasta", "JDBC");
+            sessionInteractionContext.Uses(messageBus, "Valida los datos tipo User", "JSON");
+            sessionInteractionContext.Uses(sessionInteractionContextDatabase, "Lee desde y escribe hasta", "JDBC");
 
             // Tags
             mobileApplication.AddTags("MobileApp");
@@ -152,7 +163,11 @@ namespace fas_c4_model
             paymentContextDatabase.AddTags("DataBase");
             externalToolContextDatabase.AddTags("DataBase");
 
+            userSubscriptionContextDatabase.AddTags("DataBase");
+            sessionInteractionContextDatabase.AddTags("DataBase");
 
+            userSubscriptionContext.AddTags("BoundedContext");
+            sessionInteractionContext.AddTags("BoundedContext");
 
             styles.Add(new ElementStyle("MobileApp") { Background = "#9d33d6", Color = "#ffffff", Shape = Shape.MobileDevicePortrait, Icon = "" });
             styles.Add(new ElementStyle("WebApp") { Background = "#9d33d6", Color = "#ffffff", Shape = Shape.WebBrowser, Icon = "" });
@@ -160,8 +175,8 @@ namespace fas_c4_model
             styles.Add(new ElementStyle("APIGateway") { Shape = Shape.RoundedBox, Background = "#0000ff", Color = "#ffffff", Icon = "" });
             styles.Add(new ElementStyle("MessageBus") { Width = 850, Background = "#fd8208", Color = "#ffffff", Shape = Shape.Pipe, Icon = "" });
             styles.Add(new ElementStyle("BoundedContext") { Shape = Shape.Hexagon, Background = "#facc2e", Icon = "" });
+            styles.Add(new ElementStyle("BoundedContextConnect") { Shape = Shape.Hexagon, Background = "#2ECC71", Icon = "" });
             styles.Add(new ElementStyle("DataBase") { Shape = Shape.Cylinder, Background = "#ff0000", Color = "#ffffff", Icon = "" });
-
 
             ContainerView containerView = viewSet.CreateContainerView(tutoringSystem, "Contenedor", "Diagrama de contenedores");
             contextView.PaperSize = PaperSize.A4_Landscape;
