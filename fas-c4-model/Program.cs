@@ -192,8 +192,11 @@ namespace fas_c4_model
             Component sessionsCommandController = sessionContext.AddComponent("Sessions Command Controller", "REST API endpoints de Session", "Spring Boot REST Controller");
             
             Component sessionComandService = sessionContext.AddComponent("Session Command Service", "Provee métodos para Session, pertenece a la capa Application de DDD", "Spring Component");
+            Component sessionViewProjection = sessionContext.AddComponent("Session View Projection", "", "Spring Component");
+            Component sessionHistoryViewProjection = sessionContext.AddComponent("Session History View Projection", "", "Spring Component");
 
-            Component sessionRepository = sessionContext.AddComponent("Session Repository", "Provee los métodos para la persistencia de datos de Session", "Spring Component");
+            Component sessionViewRepository = sessionContext.AddComponent("Session View Repository", "Provee los métodos para la persistencia de datos de Session", "Spring Component");
+            Component sessionHistoryViewRepository = sessionContext.AddComponent("Session History View Repository", "Provee los métodos para la persistencia de datos de Session", "Spring Component");
 
             Component domainLayer = sessionContext.AddComponent("Domain Layer", "Contiene las entidades Core del microservicio", "Spring Component");
 
@@ -225,14 +228,23 @@ namespace fas_c4_model
             Component subscriptionQueryController = subscriptionContext.AddComponent("Subscriptions Controller", "REST API endpoints de Subscription", "Spring Boot REST Controller");
 
             Component subscriptionApplicationService = subscriptionContext.AddComponent("Subscription Application Service", "Provee métodos para Subscription, pertenece a la capa Application de DDD", "Spring Component");
+            Component subscriptionViewProjection = subscriptionContext.AddComponent("Subscription View Projection", "", "Spring Component");
+            Component subscriptionHistoryViewProjection = subscriptionContext.AddComponent("Subscription History View Projection", "", "Spring Component");
 
-            Component subscriptionRepository = subscriptionContext.AddComponent("Subscription Repository", "Provee los métodos para la persistencia de datos de Subscription", "Spring Component");
+            Component subscriptionViewRepository = subscriptionContext.AddComponent("Subscription View Repository", "Provee los métodos para la persistencia de datos de Subscription", "Spring Component");
+            Component subscriptionHistoryViewRepository = subscriptionContext.AddComponent("Subscription History View Repository", "Provee los métodos para la persistencia de datos de Subscription", "Spring Component");
 
             // Components Diagram - External Tools Bounded Context
             Component externalToolController = externalToolsContext.AddComponent("External Tool Command Controller", "REST API ", "Spring Boot REST Controller");
-            Component externalToolRespository = externalToolsContext.AddComponent("External Tool Repository", "", "Spring Component");
             Component externalQueryController = externalToolsContext.AddComponent("External Tool Query Controller", "REST API ", "Spring Boot REST Controller");
+
             Component externalApplicationService = externalToolsContext.AddComponent("External Tool Application Service", "", "Spring Component");
+            Component externalToolViewProjection = externalToolsContext.AddComponent("External Tool View Projection", "", "Spring Component");
+            Component externalToolHistoryViewProjection = externalToolsContext.AddComponent("External Tool History View Projection", "", "Spring Component");
+
+            //Component externalToolRespository = externalToolsContext.AddComponent("External Tool Repository", "", "Spring Component");
+            Component externalToolViewRespository = externalToolsContext.AddComponent("External Tool View Repository", "", "Spring Component");
+            Component externalToolHistoryViewRespository = externalToolsContext.AddComponent("External Tool History View Repository", "", "Spring Component");
 
             // Components Diagram - Payment Bounded Context
             Component paymentCommandController = paymentContext.AddComponent("Payment Command Controller", "REST API ", "Spring Boot REST Controller");
@@ -264,13 +276,19 @@ namespace fas_c4_model
 
             sessionsCommandController.AddTags("Controller");
             sessionComandService.AddTags("Service");
-            sessionRepository.AddTags("Repository");
+            sessionViewProjection.AddTags("Service");
+            sessionHistoryViewProjection.AddTags("Service");
+            sessionViewRepository.AddTags("Repository");
+            sessionHistoryViewRepository.AddTags("Repository");
             domainLayer.AddTags("Repository");
 
             subscriptionCommandController.AddTags("Controller");
             subscriptionQueryController.AddTags("Controller");
             subscriptionApplicationService.AddTags("Service");
-            subscriptionRepository.AddTags("Repository");
+            subscriptionViewProjection.AddTags("Service");
+            subscriptionHistoryViewProjection.AddTags("Service");
+            subscriptionViewRepository.AddTags("Repository");
+            subscriptionHistoryViewRepository.AddTags("Repository");
 
             topicCommandController.AddTags("Controller");
             topicQueryController.AddTags("Controller");
@@ -282,12 +300,17 @@ namespace fas_c4_model
             userApplicationService.AddTags("Service");
             userRepository.AddTags("Repository");
 
-            externalToolController.AddTags("Controller");
-            externalToolRespository.AddTags("Repository");
 
+            externalToolController.AddTags("Controller");
             externalQueryController.AddTags("Controller");
             externalApplicationService.AddTags("Service");
-
+            externalToolViewProjection.AddTags("Service");
+            externalToolHistoryViewProjection.AddTags("Service");
+            //externalToolRespository.AddTags("Repository");
+            externalToolViewRespository.AddTags("Repository");
+            externalToolHistoryViewRespository.AddTags("Repository");
+                        
+            
             paymentCommandController.AddTags("Controller");
             paymentQueryController.AddTags("Controller");
             transactionCommandController.AddTags("Controller");
@@ -323,13 +346,16 @@ namespace fas_c4_model
             roleQueryController.Uses(roleRepository, "Usa");
             roleRepository.Uses(userContextDatabase, "Lee desde y escribe hasta");
 
-            //Component connection: Session Details 
-            apiGateway.Uses(sessionQueryController, "", "JSON/HTTPS");
-            sessionQueryController.Uses(sessionRepository, "Usa");
-            /**/
-            sessionRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Session 
+            apiGateway.Uses(sessionQueryController, "", "JSON/HTTPS");
+            sessionQueryController.Uses(sessionViewRepository, "Usa");
+            sessionQueryController.Uses(sessionHistoryViewRepository, "Usa");
+            sessionViewProjection.Uses(sessionViewRepository, "Lee desde y escribe hasta");
+            sessionHistoryViewProjection.Uses(sessionHistoryViewRepository, "Lee desde y escribe hasta");
+            sessionViewRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
+            sessionHistoryViewRepository.Uses(sessionContextDatabase, "Lee desde y escribe hasta");
+            
             apiGateway.Uses(sessionsCommandController, "", "JSON/HTTPS");
             sessionsCommandController.Uses(sessionComandService, "Llama a los métodos del Service");
             sessionComandService.Uses(domainLayer, "Usa");
@@ -340,8 +366,12 @@ namespace fas_c4_model
             apiGateway.Uses(subscriptionCommandController, "", "JSON/HTTPS");
             subscriptionCommandController.Uses(subscriptionApplicationService, "Usa");
             subscriptionApplicationService.Uses(domainLayer, "Usa");
-            subscriptionQueryController.Uses(subscriptionRepository, "Usa");
-            subscriptionRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
+            subscriptionQueryController.Uses(subscriptionViewRepository, "Usa");
+            subscriptionQueryController.Uses(subscriptionHistoryViewRepository, "Usa");
+            subscriptionViewProjection.Uses(subscriptionViewRepository, "Usa");
+            subscriptionHistoryViewProjection.Uses(subscriptionHistoryViewRepository, "Usa");
+            subscriptionViewRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
+            subscriptionHistoryViewRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
 
             //Component connection: Topic Of Interest 
             apiGateway.Uses(topicCommandController, "", "JSON/HTTPS");
@@ -371,9 +401,14 @@ namespace fas_c4_model
             //Component connection: External
             //Google Calendar
             apiGateway.Uses(externalQueryController, "", "JSON/HTTPS");
-            externalQueryController.Uses(externalToolRespository, "Llama a los métodos del Service");
-            externalToolRespository.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
-            //userSubscriptionRepository.Uses(subscriptionContextDatabase, "Lee desde y escribe hasta");
+            //externalQueryController.Uses(externalToolRespository, "Lee desde y escribe hasta");
+            externalQueryController.Uses(externalToolViewRespository, "Lee desde y escribe hasta");
+            externalQueryController.Uses(externalToolHistoryViewRespository, "Lee desde y escribe hasta");
+            externalToolViewProjection.Uses(externalToolViewRespository, "Lee desde y escribe hasta");
+            externalToolHistoryViewProjection.Uses(externalToolHistoryViewRespository, "Lee desde y escribe hasta");
+            //externalToolRespository.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
+            externalToolViewRespository.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
+            externalToolHistoryViewRespository.Uses(externalToolContextDatabase, "Lee desde y escribe hasta");
 
             //Zoom
             apiGateway.Uses(externalToolController, "", "JSON/HTTPS");
